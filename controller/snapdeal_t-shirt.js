@@ -2,40 +2,37 @@ const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-const url =
-  "https://www.snapdeal.com/search?keyword=tshirt&santizedKeyword=&catId=&categoryId=0&suggested=true&vertical=p&noOfResults=20&searchState=&clickSrc=suggested&lastKeyword=&prodCatId=&changeBackToAll=false&foundInAll=false&categoryIdSearched=&cityPageUrl=&categoryUrl=ALL&url=&utmContent=&dealDetail=&sort=rlvncy";
+async function cryptopriceScraper(req, res) {
+  const url =
+    "https://www.snapdeal.com/search?clickSrc=top_searches&keyword=tshirt&categoryId=0&vertical=p&noOfResults=20&SRPID=topsearch&sort=rlvncy";
+  const result = [];
+  await axios(url).then((response) => {
+    const html_data = response.data;
+    const $ = cheerio.load(html_data);
 
-let linkList = [];
-const snapdeal_t_shirt = async (req, res) => {
-  try {
-    const response = await fetch(url);
-    console.log(
-      "$---------------------------------------------------------------------------------------------------------------------------------------"
-    );
-    console.log(response);
-    console.log(
-      "$---------------------------------------------------------------------------------------------------------------------------------------"
-    );
-    const $ = cheerio.load(response);
-    console.log(
-      "$---------------------------------------------------------------------------------------------------------------------------------------"
-    );
-    console.log($);
-    const sithed = $("div.col-xs-19 reset-padding");
-    console.log(
-      "DOjaWF gdgoEp---------cPHDOP col-12-12-----------------------------------------------------------------------------------------------------------------------------"
-    );
-    console.log(sithed);
-    $("div.col-xs-19 reset-padding").each(function (i, elem) {
-      let link = $(elem).find("a").attr("href");
-      linkList.push(url + link);
+    const keys = ["Title", "Description", "Price"];
+    const selectedElem =
+      "div.product-tuple-description > div.product-desc-rating > a";
+
+    $(selectedElem).each((parentIndex, parentElem) => {
+      let keyIndex = 0;
+      const data = [];
+      if (parentIndex) {
+        $(parentElem)
+          .children()
+          .each((childId, childElem) => {
+            const value = $(childElem).text();
+            if (value) {
+              data[keys[keyIndex]] = value;
+              keyIndex++;
+            }
+          });
+        result.push(data);
+      }
     });
-    return res.status(200).send(linkList);
-  } catch (error) {
-    console.error(error);
-    console.log(error, error.message);
-    return res.status(400).send("err 2");
-  }
-};
+  });
+  console.log(result);
+  return res.status(200).send(result);
+}
 
-module.exports = snapdeal_t_shirt;
+module.exports = cryptopriceScraper;
